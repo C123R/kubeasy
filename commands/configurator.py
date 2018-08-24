@@ -4,25 +4,27 @@ import shlex
 from halo import Halo
 import colorama
 import yaml
-import socket
+import time
+from socket import socket
 import subprocess
+import threading
 from subprocess import PIPE, Popen, call, check_output
+import webbrowser
 
 from prettytable import PrettyTable
 
-from .aksCommands import get_cmd, get_config_cmd
+from .cmds import get_cmd, get_config_cmd
 
 
 K8S_CONFIG = os.path.join(os.path.expanduser('~'), '.kube/config')
 
-
-
+'''
 def checkInternet():
     
-    '''
+    
     This is to test the internet connection for your machine.
     Tries to connect to login.microsoftonline.com.
-    '''
+    
     
     try:
         # see if we can resolve the host name -- tells us if there is
@@ -30,14 +32,14 @@ def checkInternet():
         host = socket.gethostbyname('login.microsoftonline.com')
         # connect to the host -- tells us if the host is actually
         # reachable
-        socket.create_connection((host, 80), 2)
+        socket.create_connection((host, 443), 5)
         return True
 
     except:
         pass
         return False
 
-
+'''
 
 def azure_login(spinner):
     
@@ -49,16 +51,13 @@ def azure_login(spinner):
             True for successful login
 
     '''
-    
     # Check if we have valid azure cli session
-
-    if checkInternet():
+    try:
         process = Popen(shlex.split(get_cmd('login_check')), stdout=PIPE, stderr=PIPE)
-        process.communicate()    # execute it, the output goes to the stdout    
+        process.communicate(timeout=5)
         rc = process.wait()
-    
 
-        # Doing Azure login
+              # Doing Azure login
         while rc:
             try:
                 process = Popen(shlex.split(get_cmd('login')), stdout=PIPE, stderr=PIPE)
@@ -72,14 +71,26 @@ def azure_login(spinner):
         spinner.succeed(colorama.Fore.GREEN + 'Login successded --> ({})'.format(default_subscription))
     
         return True
-    else:
-        spinner.fail(colorama.Fore.RED + 'Looks like there is an issue with internet connection :(')
-        sys.exit()
+
+    except subprocess.TimeoutExpired as e :
+        (colorama.Fore.RED + 'Timeout of Azure Login {}!'.format(e))
+        return False
+        proc.kill()
+    
+
+    return False
 
 
 def isExist(cluster_name):
     
+    '''
+    
+    Read ~/.kube/config to check if the provided cluster name is already configured under ~/.kube/config
 
+
+    Return: True or False 
+
+    '''
         
     with open(K8S_CONFIG) as stream:
         config = yaml.safe_load(stream)
@@ -96,11 +107,15 @@ def isExist(cluster_name):
 
 def get_current_context():
     
-    print('here')
+    '''
+    Read ~/.kube/config to get the current context from the merged kubeconfig --> 'kubectl config current-context'
+
+
+    Return: current_context 
+    '''
     with open(K8S_CONFIG) as stream:
         config = yaml.safe_load(stream)
 
-        print(config.get('current-context'))
         return config.get('current-context')
 
 
@@ -247,38 +262,73 @@ def print_table(list,header):
 
 def set_k8s_context(cluster):
     
+   
+    
     kubeContext = "kubectl config use-context {}".format(cluster)
 
-    
     if isExist(cluster) and (cluster != get_current_context()):
 
-        process = Popen(shlex.split(kubeContext), stdout=PIPE, stderr=PIPE)
-        process.communicate()    # execute it, the output goes to the stdout
-        rc = process.wait()
+        try:
+            process = Popen(shlex.split(kubeContext), stdout=PIPE, stderr=PIPE)
+            process.communicate()    # execute it, the output goes to the stdout
+            rc = process.wait()
+        except subprocess.CalledProcessError as e:
+            raise('Not able to set kube config context: {}'.format(e))
+
         if not rc:
-            print(colorama.Fore.GREEN + 'Switched successdully to {} context !!'.format(cluster))
+            print(colorama.Fore.GREEN + 'Switched successdully to {} context.'.format(cluster))
         else:
             # Need to catch properly
             print(colorama.Fore.RED + 'Some error')
 
     elif isExist(cluster) and (cluster == get_current_context()):
-        print(colorama.Fore.YELLOW + '\n Already set as the current context--> {} !!'.format(cluster))
-        get_kubeasyList(print)
+        print(colorama.Fore.YELLOW + '{} already set as the current context.'.format(cluster))
 
     else:
         print(colorama.Fore.RED + '\n This is not valid cluster--> {} !!'.format(cluster))
         get_kubeasyList(print)
 
 
+##Copied from Azure CLI for AKS
 
-def get_dashboard(cluster_name):
+def wait_then_open(url):
+    """
+    Waits for a bit then opens a URL.  Useful for waiting for a proxy to come up, and then open the URL.
+    """
+    spinner = Halo(text=colorama.Fore.GREEN + 'Opening Kubernetes Dashboard for {} --> {}'.format(get_current_context(),url), spinner='dots',color='yellow')
+    spinner.start()
+    time.sleep(3)
+    webbrowser.open_new_tab(url)
+    spinner.info(colorama.Fore.GREEN + 'Press CTRL+C to stop the port forwarding..')
 
-    kubeConfig = K8S_CONFIG + cluster_name
+##Copied from Azure CLI for AKS
 
-    if os.path.exists(kubeConfig):
+def wait_then_open_async(url):
+    """
+    Spawns a thread that waits for a bit then opens a URL.
+    """
+    t = threading.Thread(target=wait_then_open, args=({url}))
+    t.daemon = True
+    t.start()
+
+
+def get_dashboard():
+
+    # Get free port 
+    with socket() as s:
+        s.bind(('',0))
+        listen_port = (s.getsockname()[1])
+    try:
+        pod = (check_output(get_cmd('dashboard_pod'),shell=True).decode('utf-8')).rstrip()
+
+    except subprocess.CalledProcessError as e:
+        raise('Not able to find the k8s dashboard pod: {}'.format(e))
+
+    wait_then_open_async('http://localhost:{}'.format(listen_port))
+
+    try:
+        subprocess.call(["kubectl", "-n", "kube-system",
+                         "port-forward", pod, "{}:9090".format(listen_port)],stdout=PIPE, stderr=PIPE)
         
-        print(colorama.Fore.GREEN + 'Proxy running on 127.0.0.1:8001/ui')
-        print(colorama.Fore.GREEN + 'Press CTRL+C to close the tunnel...')
-        subprocess.call(["kubectl", "--kubeconfig", kubeConfig, "proxy", "--port=62579"])
-        proxy_url = 'http://127.0.0.1:62579/'
-        wait_then_open_async(proxy_url)
+    except KeyboardInterrupt:
+        return

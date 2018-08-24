@@ -1,18 +1,13 @@
 #!/usr/bin/env python
-import click
-import sys
-import os
-import time
 import shlex
 import socket
 import colorama
+import click
 from halo import Halo
 from subprocess import Popen, PIPE, check_output
-from commands.aksCommands import get_cmd, get_config_cmd
-from commands.configurator import azure_login, get_AKSList, addConfig, get_kubeasyList, get_dashboard, isExist, set_k8s_context
+from commands.cmds import get_cmd, get_config_cmd
+from commands.configurator import azure_login, get_AKSList, addConfig, get_kubeasyList, get_dashboard, isExist, set_k8s_context, get_current_context
 
-import logging
-logging.basicConfig(format='%(levelname)s:kubeasy  %(message)s', level=logging.DEBUG)
 
 
 
@@ -35,12 +30,23 @@ def print_version(ctx, param, value):
     ctx.exit()
 
 
+def open_dashboard(ctx, param, value):
+    if not value or ctx.resilient_parsing:
+        return
+
+  #  spinner = Halo(text=colorama.Fore.GREEN + 'Opening Kubernetes dashboard for the {}'.format(get_current_context()), spinner='dots',color='yellow')
+   # spinner.start()
+    
+    get_dashboard()
+    ctx.exit()
+
 @click.group()
 @click.help_option('-h','--help', help="Show the usage of kubeasy.")
 @click.option('-v','--version',help="Show the version of kubeasy", is_flag=True, callback=print_version,
               expose_value=False, is_eager=True)
 @click.option('-l','--list',is_flag=True,help="List existing clusters in kubeasy.",callback=get_list,expose_value=False, is_eager=False)
 @click.option('-c','--context',help="Change k8s config context",callback=set_context,expose_value=False, is_eager=False)
+@click.option('-d','--dashboard',is_flag=True,help="Opens up the dashboard for current context",callback=open_dashboard,expose_value=False, is_eager=False)
 def cli():
 
 
@@ -76,7 +82,7 @@ def aks():
 @click.option('-n','--name',required=True,help="Add new kube cluster in kubeasy")
 @click.option('-f','--force',required=False,is_flag=True,default=False,help="Forcefully add cluster configuration even if it exists")
 @click.help_option('-h','--help', help="Show the usage of add command.")
-def addAks(name,force):
+def add_aks(name,force):
     
 
     '''
@@ -143,7 +149,7 @@ def ext():
 @ext.command('add', short_help='Add new cluster to kubeasy')
 @click.help_option('-h','--help', help="Show the usage of add command.")
 @click.option('-f','--file',required=True, help="Add new kube cluster in kubeasy")
-def addExt(file):
+def add_ext(file):
     
     '''
     \b
@@ -154,20 +160,6 @@ def addExt(file):
     kubeasy aks add -f <path for kubeConfig>
  
     '''
-
-
-@cli.group()
-@click.help_option('-h','--help', help="Show the usage of dash command.")
-@click.option('-n','--name',required=True,help="Add new kube cluster in kubeasy")
-def dash(name):
-    
-    '''
-
-    Opens up the dashboard for the specied cluster
-
-    '''
-
-    get_dashboard(name)
 
 
 if __name__ == '__main__':
