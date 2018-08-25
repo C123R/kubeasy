@@ -69,7 +69,6 @@ def azure_login(spinner):
 
         default_subscription = (check_output(get_cmd('account'),shell=True).decode('utf-8')).rstrip()
         spinner.succeed(colorama.Fore.GREEN + 'Login successded --> ({})'.format(default_subscription))
-    
         return True
 
     except subprocess.TimeoutExpired as e :
@@ -77,11 +76,11 @@ def azure_login(spinner):
         return False
         proc.kill()
     
-
+    print('here')
     return False
 
 
-def isExist(cluster_name):
+def _isExist(cluster_name):
     
     '''
     
@@ -164,13 +163,13 @@ def get_AKSList(print=False):
     if print and akslist:
         
         header = ['AKS Cluster','Resource Group']
-      # spinner = Halo(text=colorama.Fore.GREEN + 'Getting list of AKS clusters for your subscription:', spinner='dots',color='yellow')
         print(colorama.Fore.GREEN + 'List of AKS clusters which are currently available for your default subscription:\n')
-        print_table(akslist,header)
+        _print_table(akslist,header)
+
     elif print and not akslist:
-     #   spinner = Halo(text=colorama.Fore.GREEN + 'Getting list of AKS clusters for your subscription:', spinner='dots',color='yellow')
-        #spinner.succeed(colorama.Fore.GREEN + 'List of AKS clusters which are currently available for your default subscription:\n')
+        
         print(colorama.Fore.YELLOW + 'Currently there are no clusters configured for kubeasy, Please check kubeasy -h for how to add new clusters.')
+
     else:  
         return akslist
 
@@ -197,7 +196,6 @@ def addConfig(spinner,cluster_name):
 
     if cluster_name in aksClusters:
             
-
         process = Popen(shlex.split(get_config_cmd(cluster_name,aksClusters[cluster_name])), stdout=PIPE, stderr=PIPE)
         process.communicate()    # execute it, the STDOUT and STDERR are disabled
         rc = process.wait()
@@ -231,9 +229,11 @@ def get_kubeasyList(print=False):
 
     if print and kubeasyList:
         header = ['K8s Cluster','Master']
-        print('\n List of clusters which are currently ready to use for kubeasy:\n')
-        print_table(kubeasyList,header)
-        print('\nNote: ** indicates current context, use \"kubeasy -c <cluster_name>\" to switch context.\n')
+        print('\n List of clusters which are currently ready to use for kubeasy:')
+        print(colorama.Fore.GREEN + '\n - \'kubeasy -d\' to access Kubernetes dashboard for the current context.')
+        print(colorama.Fore.GREEN + ' - \'kubeasy -c <cluster_name>\' to switch to another listed context.\n')
+        _print_table(kubeasyList,header)
+        print(colorama.Fore.GREEN + '\nNote: ** indicates current context.\n')
         
     elif print and not kubeasyList:
         print('\n Currently there are no clusters configured for kubeasy, Please check kubeasy -h for how to add new clusters.')
@@ -243,7 +243,8 @@ def get_kubeasyList(print=False):
         return kubeasyList
     
         
-def print_table(list,header):
+
+def _print_table(list,header):
      
     '''
     Print list in Table format
@@ -266,7 +267,7 @@ def set_k8s_context(cluster):
     
     kubeContext = "kubectl config use-context {}".format(cluster)
 
-    if isExist(cluster) and (cluster != get_current_context()):
+    if _isExist(cluster) and (cluster != get_current_context()):
 
         try:
             process = Popen(shlex.split(kubeContext), stdout=PIPE, stderr=PIPE)
@@ -276,22 +277,24 @@ def set_k8s_context(cluster):
             raise('Not able to set kube config context: {}'.format(e))
 
         if not rc:
-            print(colorama.Fore.GREEN + 'Switched successdully to {} context.'.format(cluster))
+            print(colorama.Fore.GREEN + 'Switched successdully to \"{}\" context.'.format(cluster))
         else:
             # Need to catch properly
             print(colorama.Fore.RED + 'Some error')
 
-    elif isExist(cluster) and (cluster == get_current_context()):
-        print(colorama.Fore.YELLOW + '{} already set as the current context.'.format(cluster))
+    elif _isExist(cluster) and (cluster == get_current_context()):
+        print(colorama.Fore.YELLOW + '\"{}\" already set as the current context.'.format(cluster))
 
     else:
         print(colorama.Fore.RED + '\n This is not valid cluster--> {} !!'.format(cluster))
         get_kubeasyList(print)
 
 
+
 ##Copied from Azure CLI for AKS
 
 def wait_then_open(url):
+    
     """
     Waits for a bit then opens a URL.  Useful for waiting for a proxy to come up, and then open the URL.
     """
@@ -299,7 +302,8 @@ def wait_then_open(url):
     spinner.start()
     time.sleep(3)
     webbrowser.open_new_tab(url)
-    spinner.info(colorama.Fore.GREEN + 'Press CTRL+C to stop the port forwarding..')
+    spinner.info(colorama.Fore.GREEN + 'Running dashboard for {}, Press CTRL+C to stop the port forwarding..'.format(get_current_context()))
+
 
 ##Copied from Azure CLI for AKS
 
