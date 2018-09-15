@@ -6,4 +6,3 @@ PyYAML
 yamlordereddictloader
 PTable
 pylint
-emoji
