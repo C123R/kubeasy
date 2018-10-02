@@ -14,9 +14,9 @@ import webbrowser
 from prettytable import PrettyTable
 
 from .cmds import get_cmd, get_config_cmd
+from config._config import get_k8s_config
 
-
-K8S_CONFIG = os.path.join(os.path.expanduser('~'), '.kube/config')
+K8S_CONFIG = get_k8s_config()
 
 '''
 def checkInternet():
@@ -40,6 +40,7 @@ def checkInternet():
         return False
 
 '''
+
 
 def azure_login(spinner):
     
@@ -92,13 +93,15 @@ def _isExist(cluster_name):
     '''
         
     with open(K8S_CONFIG) as stream:
+
         config = yaml.safe_load(stream)
 
-        for cluster in config.get('clusters', []):
-            
-            if (cluster['name'] == cluster_name):
-                return True   
+        if not config == None:
+
+            for cluster in config.get('clusters', []):
                 
+                if (cluster['name'] == cluster_name):
+                    return True    
         
     return False
 
@@ -135,7 +138,7 @@ def get_AKSAccounts(print=False):
     return aksAccount
 '''
 
-def get_AKSList(print=False):
+def get_AKSList(output=False):
     
     '''
     To get the list of AKS Cluster for the default Azure subscription
@@ -155,18 +158,19 @@ def get_AKSList(print=False):
     list = check_output(get_cmd('aks_list'),shell=True)
 
     for a in list.splitlines():
+
         a = (a.decode('utf-8')).split()
         tempAKS.append(a)
 
     akslist = dict(tempAKS)
 
-    if print and akslist:
+    if output and akslist:
         
         header = ['AKS Cluster','Resource Group']
         print(colorama.Fore.GREEN + 'List of AKS clusters which are currently available for your default subscription:\n')
         _print_table(akslist,header)
 
-    elif print and not akslist:
+    elif output and not akslist:
         
         print(colorama.Fore.YELLOW + 'Currently there are no clusters configured for kubeasy, Please check kubeasy -h for how to add new clusters.')
 
@@ -329,6 +333,7 @@ def get_dashboard():
         raise('Not able to find the k8s dashboard pod: {}'.format(e))
 
     wait_then_open_async('http://localhost:{}'.format(listen_port))
+   # wait_then_open_async('http://localhost:{}/api/v1/namespaces/kube-system/services/http:kubernetes-dashboard:/proxy/#!/overview?namespace=default'.format(listen_port))
 
     try:
         subprocess.call(["kubectl", "-n", "kube-system",

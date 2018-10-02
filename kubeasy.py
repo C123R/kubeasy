@@ -1,18 +1,17 @@
 #!/usr/bin/env python
 import sys
-import shlex
-import socket
 import colorama
 import click
 from halo import Halo
 from subprocess import Popen, PIPE, check_output
 from commands.cmds import get_cmd, get_config_cmd
-from commands.configurator import azure_login, get_AKSList, addConfig, get_kubeasyList, get_dashboard, _isExist, set_k8s_context, get_current_context
-
-
+from commands.configurator import azure_login, get_AKSList, addConfig, get_kubeasyList, get_dashboard, _isExist, set_k8s_context, get_current_context, get_k8s_config
 
 
 def get_list(ctx, param, value):
+
+    """ To get list of Kubernetes Clusters (As per ~/.kube/config) """
+
     if not value or ctx.resilient_parsing:
         return
     get_kubeasyList(print)
@@ -20,6 +19,9 @@ def get_list(ctx, param, value):
 
 
 def set_context(ctx, param, value):
+
+    """ To set the kubernentes cofing context """
+
     if not value or ctx.resilient_parsing:
         return
     set_k8s_context(value)
@@ -27,6 +29,9 @@ def set_context(ctx, param, value):
 
 
 def print_version(ctx, param, value):
+
+    """ Get the version of kubeasy """
+
     if not value or ctx.resilient_parsing:
         return
     click.echo('Kubeasy Version 0.1')
@@ -34,11 +39,15 @@ def print_version(ctx, param, value):
 
 
 def open_dashboard(ctx, param, value):
+
+    """ Open kubernetes Dashboard with browser tab"""
+
     if not value or ctx.resilient_parsing:
         return
     
     get_dashboard()
     ctx.exit()
+
 
 
 
@@ -50,7 +59,6 @@ def open_dashboard(ctx, param, value):
 @click.option('-c','--context',help="Change k8s config context",callback=set_context,expose_value=False, is_eager=False)
 @click.option('-d','--dashboard',is_flag=True,help="Opens up the dashboard for current context",callback=open_dashboard,expose_value=False, is_eager=False)
 def cli():
-
 
     '''
     
@@ -66,9 +74,11 @@ def cli():
     '''
 
 
+
 @cli.group()
 @click.help_option('-h','--help', help="Show the usage of aks command.")
 def aks():
+
     '''
     \b
     Manages k8s clusters from AKS.
@@ -78,7 +88,6 @@ def aks():
     Or all the clusters from specific Azure Subscription.
 
     '''
-
 
 @aks.command('add', short_help='Add new cluster to kubeasy')
 @click.option('-n','--name',required=True,help="Add new kube cluster in kubeasy")
@@ -114,10 +123,9 @@ def add_aks(name,force):
     spinner.start()
 
     if name == 'all':
-    
-         for key in get_AKSList():
+                 
+        for key in get_AKSList():
          
-             
              if (not _isExist(key) or (_isExist(key) and force)):
                  
                  addConfig(spinner,key)
@@ -160,7 +168,7 @@ def add_ext(file):
     \b
     # Add external K8s clusters using kube config.
 
-    kubeasy aks add -f <path for kubeConfig>
+    kubeasy ext add -f <path for kubeConfig>
  
     '''
 
