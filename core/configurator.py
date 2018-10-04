@@ -55,14 +55,14 @@ def azure_login(spinner):
     '''
     # Check if we have valid azure cli session
     try:
-        process = Popen(shlex.split(get_cmd('login_check')), stdout=PIPE, stderr=PIPE)
+        process = Popen(shlex.split(get_cmd('az_login_check')), stdout=PIPE, stderr=PIPE)
         process.communicate(timeout=5)
         rc = process.wait()
 
               # Doing Azure login
         while rc:
             try:
-                process = Popen(shlex.split(get_cmd('login')), stdout=PIPE, stderr=PIPE)
+                process = Popen(shlex.split(get_cmd('az_login')), stdout=PIPE, stderr=PIPE)
                 process.communicate()    # execute it, the output goes to the stdout
                 rc = process.wait()
             except Exception as e:
@@ -80,6 +80,7 @@ def azure_login(spinner):
     
     print('here')
     return False
+    
 
 def _config_loader():
 
@@ -128,23 +129,6 @@ def get_current_context():
     if config:
         return config.get('current-context')
 
-
-'''
-TO DO
-def get_AKSAccounts(print=False):
-    
-    
-    To get the list of AKS Account list
-
- 
-
-    aksAccount = []
-    list = check_output(get_cmd('account_list'),shell=True)
-    for a in list.splitlines():
-        a = (a.decode('utf-8')).rstrip('\t')
-        aksAccount.append(a)
-    return aksAccount
-'''
 
 def get_AKSList(output=False):
     
@@ -218,7 +202,7 @@ def addConfig(spinner,cluster_name):
     else:
         
         spinner.fail(colorama.Fore.RED + 'Invalid AKS cluster {} !!'.format(cluster_name))
-        get_AKSList(print)
+        get_AKSList(output)
 
 
 
@@ -285,6 +269,7 @@ def set_k8s_context(cluster):
             config['current-context'] = cluster
 
             with open(K8S_CONFIG, 'w+') as stream:
+
                 yaml.dump(config, stream, default_flow_style=False)
             
             print(colorama.Fore.GREEN + '\"{}\" set as the current context.'.format(cluster))
@@ -295,7 +280,7 @@ def set_k8s_context(cluster):
         
         else:
             print(colorama.Fore.RED + '\n This is not valid cluster--> {} !!'.format(cluster))
-            get_kubeasyList(print)
+            get_kubeasyList(output)
     
     else:
 

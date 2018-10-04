@@ -5,7 +5,7 @@ import click
 from halo import Halo
 from subprocess import Popen, PIPE, check_output
 from config._cmds import get_cmd, get_config_cmd
-from commands.configurator import azure_login, get_AKSList, addConfig, get_kubeasyList, get_dashboard, _isExist, set_k8s_context, get_current_context, get_k8s_config
+from core.configurator import azure_login, get_AKSList, addConfig, get_kubeasyList, get_dashboard, _isExist, set_k8s_context, get_current_context, get_k8s_config
 
 def get_list(ctx, param, value):
 
@@ -144,32 +144,36 @@ def add_aks(name,force):
 
 
 @cli.group()
-@click.help_option('-h','--help', help="Show the usage of ext command.")
-def ext():
+@click.help_option('-h','--help', help="Show the usage of gke command.")
+def gke():
     
-
     '''
     \b
-    Manages external k8s clusters.
-    
+    Manages k8s clusters from GKE.
+
     \b
-    You can add new k8s clusters just specifying the path of the K8s Cluster configuration. 
+    You can add new k8s clusters just specifying name of the GKE Cluster
+
     '''
+    
 
 
-@ext.command('add', short_help='Add new cluster to kubeasy')
+@gke.command('add', short_help='Add new cluster to kubeasy')
+@click.option('-n','--name',required=True,help="Add new kube cluster in kubeasy")
+@click.option('-f','--force',required=False,is_flag=True,default=False,help="Forcefully add cluster configuration even if it exists")
 @click.help_option('-h','--help', help="Show the usage of add command.")
-@click.option('-f','--file',required=True, help="Add new kube cluster in kubeasy")
-def add_ext(file):
+def add_gke(name,force):
     
     '''
     \b
     Example:
     \b
-    # Add external K8s clusters using kube config.
+    # Add all GKE clusters .
+    kubeasy gke add -n all
 
-    kubeasy ext add -f <path for kubeConfig>
- 
+    \b
+    # Add specific GKE clusters.
+    kubeasy gke add -n <gkeCluster>
     '''
 
 
