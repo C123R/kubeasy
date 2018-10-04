@@ -1,14 +1,10 @@
 import sys
-import os
-from subprocess import Popen, PIPE, check_output
 
-K8S_HOME = os.path.join(os.path.expanduser('~'), '.kube/')
 command_list = {
 
     'login':'az login',
     'login_check': 'az group list',
     'aks_list': 'az aks list --query \"[*].{Name:name,ResourceGroup:resourceGroup}\" -o tsv',
-   # 'aks_list': 'az aks list --query \"[?provisioningState == \'Succeeded\'].{Name:name,ResourceGroup:resourceGroup,Master:fqdn,K8sVersion:kubernetesVersion}\" -o tsv',
     'account_list' : 'az account list --query \"[*].{Name:name,Default:isDefault}\" -o tsv',
     'account': 'az account show --query \"name\" -o tsv',
     'dashboard_pod' : 'kubectl get pods -n kube-system --output name --selector k8s-app=kubernetes-dashboard',

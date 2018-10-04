@@ -10,10 +10,11 @@ import subprocess
 import threading
 from subprocess import PIPE, Popen, call, check_output
 import webbrowser
+from kubernetes import client, config
 
 from prettytable import PrettyTable
 
-from .cmds import get_cmd, get_config_cmd
+from config._cmds import get_cmd, get_config_cmd
 from config._config import get_k8s_config
 
 K8S_CONFIG = get_k8s_config()
@@ -80,6 +81,18 @@ def azure_login(spinner):
     print('here')
     return False
 
+def _config_loader():
+
+
+    with open(K8S_CONFIG) as stream:
+
+        config = yaml.safe_load(stream)
+
+        if config == None:
+            return False
+
+        return config
+
 
 def _isExist(cluster_name):
     
@@ -87,22 +100,18 @@ def _isExist(cluster_name):
     
     Read ~/.kube/config to check if the provided cluster name is already configured under ~/.kube/config
 
-
-    Return: True or False 
+    :param cluster_name: Name of cluster to check against.
+    :return: True or False 
 
     '''
-        
-    with open(K8S_CONFIG) as stream:
+    config = _config_loader()
 
-        config = yaml.safe_load(stream)
+    if config:
 
-        if not config == None:
-
-            for cluster in config.get('clusters', []):
-                
+        for cluster in config.get('clusters', []):                
                 if (cluster['name'] == cluster_name):
-                    return True    
-        
+                    return True 
+
     return False
 
 
@@ -112,12 +121,11 @@ def get_current_context():
     '''
     Read ~/.kube/config to get the current context from the merged kubeconfig --> 'kubectl config current-context'
 
-
-    Return: current_context 
+    return: current_context 
     '''
-    with open(K8S_CONFIG) as stream:
-        config = yaml.safe_load(stream)
 
+    config = _config_loader()
+    if config:
         return config.get('current-context')
 
 
@@ -182,7 +190,6 @@ def get_AKSList(output=False):
 def addConfig(spinner,cluster_name):
     
     ''' 
-
     To add the AKS cluster configuration to default Kubeasy directory.
 
     Validate the correct clustername by comparing with the list of AKS cluster for the default Azure subscription
@@ -194,8 +201,8 @@ def addConfig(spinner,cluster_name):
             'success' if configuration copied successfully.
             'error' while copying the file.
             'incorrect_cluster' if cluster is not present in Azure subscription.
-
     '''
+
     aksClusters = get_AKSList()
 
     if cluster_name in aksClusters:
@@ -216,22 +223,23 @@ def addConfig(spinner,cluster_name):
 
 
 
-def get_kubeasyList(print=False):
+def get_kubeasyList(output=False):
     
 
-    kubeasyList = {}  
+    kubeasyList = {}
+    config = _config_loader()
 
-    with open(K8S_CONFIG) as stream:
-        config = yaml.safe_load(stream)
+    if config:
 
+            for cluster in config.get('clusters', []):
 
-        for cluster in config.get('clusters', []):
-            if cluster['name'] == get_current_context():
-                kubeasyList['** ' + cluster['name']] = cluster['cluster']['server']
-            else:
-                kubeasyList['   ' + cluster['name']] = cluster['cluster']['server']
+                if cluster['name'] == get_current_context():
+                    kubeasyList['** ' + cluster['name']] = cluster['cluster']['server']
+                else:
+                    kubeasyList['   ' + cluster['name']] = cluster['cluster']['server']
 
-    if print and kubeasyList:
+    if output and kubeasyList:
+    
         header = ['K8s Cluster','Master']
         print('\n List of clusters which are currently ready to use for kubeasy:')
         print(colorama.Fore.GREEN + '\n - \'kubeasy -d\' to access Kubernetes dashboard for the current context.')
@@ -239,11 +247,12 @@ def get_kubeasyList(print=False):
         _print_table(kubeasyList,header)
         print(colorama.Fore.GREEN + '\nNote: ** indicates current context.\n')
         
-    elif print and not kubeasyList:
+    elif output and not kubeasyList:
+
         print('\n Currently there are no clusters configured for kubeasy, Please check kubeasy -h for how to add new clusters.')
     
-
     else:
+
         return kubeasyList
     
         
@@ -264,34 +273,33 @@ def _print_table(list,header):
     print(x)
   
 
-
 def set_k8s_context(cluster):
     
-   
-    
-    kubeContext = "kubectl config use-context {}".format(cluster)
 
-    if _isExist(cluster) and (cluster != get_current_context()):
+    config = _config_loader()
 
-        try:
-            process = Popen(shlex.split(kubeContext), stdout=PIPE, stderr=PIPE)
-            process.communicate()    # execute it, the output goes to the stdout
-            rc = process.wait()
-        except subprocess.CalledProcessError as e:
-            raise('Not able to set kube config context: {}'.format(e))
+    if config:
 
-        if not rc:
-            print(colorama.Fore.GREEN + 'Switched successdully to \"{}\" context.'.format(cluster))
+        if _isExist(cluster) and (cluster != get_current_context()):
+
+            config['current-context'] = cluster
+
+            with open(K8S_CONFIG, 'w+') as stream:
+                yaml.dump(config, stream, default_flow_style=False)
+            
+            print(colorama.Fore.GREEN + '\"{}\" set as the current context.'.format(cluster))
+        
+        elif _isExist(cluster) and (cluster == get_current_context()):
+
+            print(colorama.Fore.YELLOW + '\"{}\" already set as the current context.'.format(cluster))
+        
         else:
-            # Need to catch properly
-            print(colorama.Fore.RED + 'Some error')
-
-    elif _isExist(cluster) and (cluster == get_current_context()):
-        print(colorama.Fore.YELLOW + '\"{}\" already set as the current context.'.format(cluster))
-
+            print(colorama.Fore.RED + '\n This is not valid cluster--> {} !!'.format(cluster))
+            get_kubeasyList(print)
+    
     else:
-        print(colorama.Fore.RED + '\n This is not valid cluster--> {} !!'.format(cluster))
-        get_kubeasyList(print)
+
+        print(colorama.Fore.RED + '{} is not a valid kubeconfig!'.format(K8S_CONFIG))
 
 
 

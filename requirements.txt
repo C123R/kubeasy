@@ -6,3 +6,4 @@ PyYAML
 yamlordereddictloader
 PTable
 pylint
+kubernetes

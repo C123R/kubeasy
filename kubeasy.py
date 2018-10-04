@@ -4,9 +4,8 @@ import colorama
 import click
 from halo import Halo
 from subprocess import Popen, PIPE, check_output
-from commands.cmds import get_cmd, get_config_cmd
+from config._cmds import get_cmd, get_config_cmd
 from commands.configurator import azure_login, get_AKSList, addConfig, get_kubeasyList, get_dashboard, _isExist, set_k8s_context, get_current_context, get_k8s_config
-
 
 def get_list(ctx, param, value):
 
@@ -14,7 +13,7 @@ def get_list(ctx, param, value):
 
     if not value or ctx.resilient_parsing:
         return
-    get_kubeasyList(print)
+    get_kubeasyList(output=True)
     ctx.exit()
 
 
@@ -148,6 +147,7 @@ def add_aks(name,force):
 @click.help_option('-h','--help', help="Show the usage of ext command.")
 def ext():
     
+
     '''
     \b
     Manages external k8s clusters.
