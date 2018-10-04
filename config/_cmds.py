@@ -11,6 +11,12 @@ command_list = {
 
 }
 
+common = {
+
+    'dashboard_pod' : 'kubectl get pods -n kube-system --output name --selector k8s-app=kubernetes-dashboard',
+
+}
+
 azure = {
 
     'login':'az login',
@@ -30,13 +36,26 @@ google = {
 }
 
 
-def get_cmd(cmd):
-    
-    if not cmd in command_list:
+def get_cmd(cmd,cloud=common):
+
+    if cloud == 'azure':
+
+        cloud_provider = azure
+
+    elif cloud == 'google':
+
+        cloud_provider = google
+
+    else:
+
+        cloud_provider = common
+
+    if not cmd in cloud_provider:
         print(cmd)
         sys.exit('\nNo such azure command, check command_list dict')
 
-    return command_list[cmd]
+    return cloud_provider[cmd]
+
 
 
 def get_config_cmd(cluster_name,resource_group):

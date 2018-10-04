@@ -5,7 +5,8 @@ import click
 from halo import Halo
 from subprocess import Popen, PIPE, check_output
 from config._cmds import get_cmd, get_config_cmd
-from core.configurator import azure_login, get_AKSList, addConfig, get_kubeasyList, get_dashboard, _isExist, set_k8s_context, get_current_context, get_k8s_config
+from core.configurator import login, get_AKSList,get_GKEList, addConfig, get_kubeasyList, get_dashboard, _isExist, set_k8s_context, get_current_context, get_k8s_config
+
 
 def get_list(ctx, param, value):
 
@@ -112,7 +113,7 @@ def add_aks(name,force):
     spinner = Halo(text=colorama.Fore.GREEN + 'Logging into Azure using Azure CLI..', spinner='dots',color='yellow')
     spinner.start()
 
-    if not azure_login(spinner):
+    if not login('azure',spinner):
         print('Azure login failed')
         sys.exit(1)
 
@@ -175,6 +176,39 @@ def add_gke(name,force):
     # Add specific GKE clusters.
     kubeasy gke add -n <gkeCluster>
     '''
+
+    spinner = Halo(text=colorama.Fore.GREEN + 'Logging into Google Cloud using gcloud ..', spinner='dots',color='yellow')
+    spinner.start()
+
+    if not login('google',spinner):
+        print('Google Cloud login failed')
+        sys.exit(1)
+    
+    spinner.stop()
+
+    spinner = Halo(text=colorama.Fore.GREEN + 'Getting Kubernetes Configuration for {}'.format(name), spinner='dots',color='yellow')
+    
+    spinner.start()
+
+    if name == 'all':
+                 
+        for key in get_GKEList():
+         
+             if (not _isExist(key) or (_isExist(key) and force)):
+                 pass
+               #  addConfig(spinner,key)
+             else:
+                 spinner.info(colorama.Fore.GREEN + '\"{}\" is already configured for the Kubeasy, Cheers ! '.format(key))
+
+    elif (not _isExist(name) or (_isExist(name) and force)):
+        pass
+       # addConfig(spinner,name)
+
+    else:
+        
+        spinner.info(colorama.Fore.GREEN + '\"{}\" is already configured for the Kubeasy, Cheers !'.format(name))
+
+    spinner.stop()
 
 
 if __name__ == '__main__':

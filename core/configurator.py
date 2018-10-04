@@ -43,7 +43,7 @@ def checkInternet():
 '''
 
 
-def azure_login(spinner):
+def login(cloud,spinner):
     
     '''
     Checks if there is valid azure login session, if not
@@ -55,22 +55,24 @@ def azure_login(spinner):
     '''
     # Check if we have valid azure cli session
     try:
-        process = Popen(shlex.split(get_cmd('az_login_check')), stdout=PIPE, stderr=PIPE)
+        process = Popen(shlex.split(get_cmd('login_check',cloud)), stdout=PIPE, stderr=PIPE)
         process.communicate(timeout=5)
         rc = process.wait()
 
               # Doing Azure login
         while rc:
             try:
-                process = Popen(shlex.split(get_cmd('az_login')), stdout=PIPE, stderr=PIPE)
+                process = Popen(shlex.split(get_cmd('login',cloud)), stdout=PIPE, stderr=PIPE)
                 process.communicate()    # execute it, the output goes to the stdout
                 rc = process.wait()
             except Exception as e:
                 spinner.fail(colorama.Fore.RED + 'Login failed, try doing login with \"az login\"..')
                 sys.exit(e)
 
-        default_subscription = (check_output(get_cmd('account'),shell=True).decode('utf-8')).rstrip()
-        spinner.succeed(colorama.Fore.GREEN + 'Login successded --> ({})'.format(default_subscription))
+        #default_subscription = (check_output(get_cmd('account',cloud),shell=True).decode('utf-8')).rstrip()
+       # spinner.succeed(colorama.Fore.GREEN + 'Login successded --> ({})'.format(default_subscription))
+        spinner.succeed(colorama.Fore.GREEN + 'Login successded')
+
         return True
 
     except subprocess.TimeoutExpired as e :
@@ -147,7 +149,7 @@ def get_AKSList(output=False):
     # Temporary array to get the list of AKS cluster from azure.
     tempAKS = []
 
-    list = check_output(get_cmd('aks_list'),shell=True)
+    list = check_output(get_cmd('k8s_list','azure'),shell=True)
 
     for a in list.splitlines():
 
@@ -164,7 +166,7 @@ def get_AKSList(output=False):
 
     elif output and not akslist:
         
-        print(colorama.Fore.YELLOW + 'Currently there are no clusters configured for kubeasy, Please check kubeasy -h for how to add new clusters.')
+        print(colorama.Fore.YELLOW + 'Currently there are no AKS clusters in default azure subscription!!')
 
     else:  
         return akslist
@@ -202,7 +204,7 @@ def addConfig(spinner,cluster_name):
     else:
         
         spinner.fail(colorama.Fore.RED + 'Invalid AKS cluster {} !!'.format(cluster_name))
-        get_AKSList(output)
+        get_AKSList(output=True)
 
 
 
@@ -239,7 +241,44 @@ def get_kubeasyList(output=False):
 
         return kubeasyList
     
+def get_GKEList(output=False):
+    
+    '''
+    To get the list of AKS Cluster for the default Azure subscription
+
+    You need to login via Azure CLI first, use azure_login function for this.
+
+    Return:
+            dict of Azure AKS cluster and respective resource group if no cluster_name provided.
+            
+    '''
+    # Dict stores Azure AKS cluster and respective Resource group.
+    gkeList = {}
+
+    # Temporary array to get the list of AKS cluster from azure.
+    tempGKE = []
+
+    list = check_output(get_cmd('k8s_list','google'),shell=True)
+
+    for a in list.splitlines():
+
+        a = (a.decode('utf-8')).split()
+        tempGKE.append(a)
+
+    gkeList = dict(tempGKE)
+
+    if output and gkeList:
         
+        header = ['GKE Cluster','PROJECT NAME']
+        print(colorama.Fore.GREEN + 'List of AKS clusters which are currently available for your default subscription:\n')
+        _print_table(gkeList,header)
+
+    elif output and not gkeList:
+        
+        print(colorama.Fore.YELLOW + 'Currently there are no GKE clusters in default project!!')
+
+    else:  
+        return gkeList
 
 def _print_table(list,header):
      
