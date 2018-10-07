@@ -31,7 +31,7 @@ google = {
 
     'login':'gcloud auth login',
     'login_check': 'gcloud projects list',
-    'k8s_list': 'gcloud container clusters list --format=\"value(selfLink.scope(),selfLink.scope(projects).segment(0)\"',
+    'k8s_list': 'gcloud container clusters list --format=\"value(selfLink.scope(clusters),selfLink.scope(projects).segment(0))\"',
 
 }
 
@@ -58,9 +58,17 @@ def get_cmd(cmd,cloud=common):
 
 
 
-def get_config_cmd(cluster_name,resource_group):
+def get_credentials(cloud,cluster_name,resource_group):
     
 
-    get_kubeconfig_cmd = "az aks get-credentials -n {} -g {}".format(cluster_name,resource_group)
+    if cloud == 'azure':
+
+        get_kubeconfig_cmd = "az aks get-credentials -n {} -g {}".format(cluster_name,resource_group)
     
+    else:
+
+       get_kubeconfig_cmd = "gcloud container clusters get-credentials {}".format(cluster_name)
+       
+       print(get_kubeconfig_cmd)
+
     return get_kubeconfig_cmd

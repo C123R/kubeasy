@@ -4,8 +4,8 @@ import colorama
 import click
 from halo import Halo
 from subprocess import Popen, PIPE, check_output
-from config._cmds import get_cmd, get_config_cmd
-from core.configurator import login, get_AKSList,get_GKEList, addConfig, get_kubeasyList, get_dashboard, _isExist, set_k8s_context, get_current_context, get_k8s_config
+from config._cmds import get_cmd, get_credentials
+from core.configurator import login, get_K8SList,get_GKEList, addConfig, get_kubeasyList, get_dashboard, _isExist, set_k8s_context, get_current_context, get_k8s_config
 
 
 def get_list(ctx, param, value):
@@ -114,7 +114,7 @@ def add_aks(name,force):
     spinner.start()
 
     if not login('azure',spinner):
-        print('Azure login failed')
+        spinner.fail(colorama.Fore.RED + 'Azure login failed')
         sys.exit(1)
 
     spinner.stop()
@@ -124,17 +124,17 @@ def add_aks(name,force):
 
     if name == 'all':
                  
-        for key in get_AKSList():
+        for key in get_K8SList('azure'):
          
              if (not _isExist(key) or (_isExist(key) and force)):
                  
-                 addConfig(spinner,key)
+                 addConfig(spinner,'azure',key)
              else:
                  spinner.info(colorama.Fore.GREEN + '\"{}\" is already configured for the Kubeasy, Cheers ! '.format(key))
 
     elif (not _isExist(name) or (_isExist(name) and force)):
         
-        addConfig(spinner,name)
+        addConfig(spinner,'azure',name)
 
     else:
         
@@ -181,7 +181,7 @@ def add_gke(name,force):
     spinner.start()
 
     if not login('google',spinner):
-        print('Google Cloud login failed')
+        spinner.fail(colorama.Fore.RED + 'Google Cloud login failed')
         sys.exit(1)
     
     spinner.stop()
@@ -192,17 +192,17 @@ def add_gke(name,force):
 
     if name == 'all':
                  
-        for key in get_GKEList():
+        for key in get_K8SList('google'):
          
              if (not _isExist(key) or (_isExist(key) and force)):
-                 pass
-               #  addConfig(spinner,key)
+                 
+                 addConfig(spinner,'google',key)
              else:
                  spinner.info(colorama.Fore.GREEN + '\"{}\" is already configured for the Kubeasy, Cheers ! '.format(key))
 
     elif (not _isExist(name) or (_isExist(name) and force)):
-        pass
-       # addConfig(spinner,name)
+        
+        addConfig(spinner,'google',name)
 
     else:
         

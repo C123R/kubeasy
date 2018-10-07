@@ -1,9 +1,7 @@
 click
-pygogo
 colorama
 halo
 PyYAML
-yamlordereddictloader
 PTable
 pylint
 kubernetes

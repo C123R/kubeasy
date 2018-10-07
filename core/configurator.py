@@ -14,7 +14,7 @@ from kubernetes import client, config
 
 from prettytable import PrettyTable
 
-from config._cmds import get_cmd, get_config_cmd
+from config._cmds import get_cmd, get_credentials
 from config._config import get_k8s_config
 
 K8S_CONFIG = get_k8s_config()
@@ -132,7 +132,7 @@ def get_current_context():
         return config.get('current-context')
 
 
-def get_AKSList(output=False):
+def get_K8SList(cloud,output=False):
     
     '''
     To get the list of AKS Cluster for the default Azure subscription
@@ -149,7 +149,7 @@ def get_AKSList(output=False):
     # Temporary array to get the list of AKS cluster from azure.
     tempAKS = []
 
-    list = check_output(get_cmd('k8s_list','azure'),shell=True)
+    list = check_output(get_cmd('k8s_list',cloud),shell=True)
 
     for a in list.splitlines():
 
@@ -160,51 +160,57 @@ def get_AKSList(output=False):
 
     if output and akslist:
         
-        header = ['AKS Cluster','Resource Group']
-        print(colorama.Fore.GREEN + 'List of AKS clusters which are currently available for your default subscription:\n')
+        if cloud == 'azure':
+             header = ['AKS Cluster','Resource Group']
+             print(colorama.Fore.GREEN + 'List of AKS clusters which are currently available for your default subscription:')
+        else:
+            header = ['GKE Cluster','Project Name']
+            print(colorama.Fore.GREEN + 'List of GKE clusters which are currently available for your default project:')
+
+        
         _print_table(akslist,header)
 
     elif output and not akslist:
         
-        print(colorama.Fore.YELLOW + 'Currently there are no AKS clusters in default azure subscription!!')
+        print(colorama.Fore.YELLOW + 'Currently there are no K8s clusters in default azure subscription!!')
 
     else:  
         return akslist
 
 
 
-def addConfig(spinner,cluster_name):
+def addConfig(spinner,cloud,cluster_name):
     
     ''' 
-    To add the AKS cluster configuration to default Kubeasy directory.
+    To add the AKS/GKE cluster configuration to default Kubeasy directory.
 
     Validate the correct clustername by comparing with the list of AKS cluster for the default Azure subscription
 
     Arguments: 
             spinner obj
-            name of AKS cluster
+            name of AKS/GKE cluster
     Return:
             'success' if configuration copied successfully.
             'error' while copying the file.
             'incorrect_cluster' if cluster is not present in Azure subscription.
     '''
 
-    aksClusters = get_AKSList()
+    k8sCluster = get_K8SList(cloud)
 
-    if cluster_name in aksClusters:
+    if cluster_name in k8sCluster:
             
-        process = Popen(shlex.split(get_config_cmd(cluster_name,aksClusters[cluster_name])), stdout=PIPE, stderr=PIPE)
+        process = Popen(shlex.split(get_credentials(cloud,cluster_name,k8sCluster[cluster_name])), stdout=PIPE, stderr=PIPE)
         process.communicate()    # execute it, the STDOUT and STDERR are disabled
         rc = process.wait()
         if not rc:
             spinner.succeed(colorama.Fore.GREEN + 'Added "{}" configuration to kubeasy default directory.'.format(cluster_name))
         else:
-            spinner.fail(colorama.Fore.RED + 'Error downloading the configuration for the {},Please try to get the config file with the mentioned command --> \"{}\"'.format(cluster_name,get_config_cmd(cluster_name,aksClusters[cluster_name])))
+            spinner.fail(colorama.Fore.RED + 'Error downloading the configuration for the {},Please try to get the config file with the mentioned command --> \"{}\"'.format(cluster_name,get_credentials(cloud,cluster_name,k8sCluster[cluster_name])))
 
     else:
         
-        spinner.fail(colorama.Fore.RED + 'Invalid AKS cluster {} !!'.format(cluster_name))
-        get_AKSList(output=True)
+        spinner.fail(colorama.Fore.RED + 'Invalid K8s cluster {} !!'.format(cluster_name))
+        get_K8SList(cloud,output=True)
 
 
 
@@ -234,8 +240,7 @@ def get_kubeasyList(output=False):
         print(colorama.Fore.GREEN + '\nNote: ** indicates current context.\n')
         
     elif output and not kubeasyList:
-
-        print('\n Currently there are no clusters configured for kubeasy, Please check kubeasy -h for how to add new clusters.')
+        print(colorama.Fore.YELLOW + 'Currently there are no clusters configured for kubeasy, Please check \'kubeasy -h\' for how to add new AKS\GKE clusters.')
     
     else:
 
