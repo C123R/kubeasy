@@ -11,7 +11,6 @@ import threading
 from subprocess import PIPE, Popen, call, check_output
 import webbrowser
 from kubernetes import client, config
-
 from prettytable import PrettyTable
 
 from config._cmds import get_cmd, get_credentials
@@ -78,9 +77,8 @@ def login(cloud,spinner):
     except subprocess.TimeoutExpired as e :
         (colorama.Fore.RED + 'Timeout of Azure Login {}!'.format(e))
         return False
-        proc.kill()
     
-    print('here')
+
     return False
     
 
@@ -144,7 +142,7 @@ def get_K8SList(cloud,output=False):
             
     '''
     # Dict stores Azure AKS cluster and respective Resource group.
-    akslist = {}
+    k8slist = {}
 
     # Temporary array to get the list of AKS cluster from azure.
     tempAKS = []
@@ -156,9 +154,9 @@ def get_K8SList(cloud,output=False):
         a = (a.decode('utf-8')).split()
         tempAKS.append(a)
 
-    akslist = dict(tempAKS)
+    k8slist = dict(tempAKS)
 
-    if output and akslist:
+    if output and k8slist:
         
         if cloud == 'azure':
              header = ['AKS Cluster','Resource Group']
@@ -168,14 +166,14 @@ def get_K8SList(cloud,output=False):
             print(colorama.Fore.GREEN + 'List of GKE clusters which are currently available for your default project:')
 
         
-        _print_table(akslist,header)
+        _print_table(k8slist,header)
 
-    elif output and not akslist:
+    elif output and not k8slist:
         
-        print(colorama.Fore.YELLOW + 'Currently there are no K8s clusters in default azure subscription!!')
-
+        print(colorama.Fore.YELLOW + 'Currently there are no K8s clusters in default project/subscription!!')
+        
     else:  
-        return akslist
+        return k8slist
 
 
 
@@ -240,7 +238,7 @@ def get_kubeasyList(output=False):
         print(colorama.Fore.GREEN + '\nNote: ** indicates current context.\n')
         
     elif output and not kubeasyList:
-        print(colorama.Fore.YELLOW + 'Currently there are no clusters configured for kubeasy, Please check \'kubeasy -h\' for how to add new AKS\GKE clusters.')
+        print(colorama.Fore.YELLOW + 'Currently there are no clusters configured for kubeasy, Please check \"kubeasy -h\" for how to add new AKS\\GKE clusters.')
     
     else:
 
@@ -324,7 +322,7 @@ def set_k8s_context(cluster):
         
         else:
             print(colorama.Fore.RED + '\n This is not valid cluster--> {} !!'.format(cluster))
-            get_kubeasyList(output)
+            get_kubeasyList(output=True)
     
     else:
 
