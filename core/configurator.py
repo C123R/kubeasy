@@ -324,7 +324,7 @@ def set_k8s_context(cluster):
         
         else:
             print(colorama.Fore.RED + '\n This is not valid cluster--> {} !!'.format(cluster))
-            get_kubeasyList(output)
+            get_kubeasyList(output=True)
     
     else:
 
