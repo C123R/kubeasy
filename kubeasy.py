@@ -5,7 +5,7 @@ import click
 from halo import Halo
 from subprocess import Popen, PIPE, check_output
 from config._cmds import get_cmd, get_credentials
-from core.configurator import login, get_K8SList,get_GKEList, addConfig, get_kubeasyList, get_dashboard, _isExist, set_k8s_context, get_current_context, get_k8s_config
+from core.configurator import login, get_K8SList, get_GKEList, addConfig, get_kubeasyList, get_dashboard, _isExist, set_k8s_context, get_current_context, get_k8s_config
 
 
 def get_list(ctx, param, value):
@@ -47,7 +47,6 @@ def open_dashboard(ctx, param, value):
     
     get_dashboard()
     ctx.exit()
-
 
 
 
