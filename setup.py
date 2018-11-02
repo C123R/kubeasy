@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 DEPENDENCIES = [
     'click',
-    'colorama',
+    'colorama==0.3.9',
     'halo',
     'PyYAML',
     'PTable',
