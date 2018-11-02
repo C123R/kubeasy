@@ -14,7 +14,7 @@ DEPENDENCIES = [
 
 setup(
     name='kubeasy',
-    version='0.6',
+    version='0.7',
     py_modules=['kubeasy'],
     python_requires='>=3',
     packages=find_packages(),
