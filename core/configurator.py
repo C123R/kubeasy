@@ -312,7 +312,7 @@ def set_k8s_context(cluster):
 
             with open(K8S_CONFIG, 'w+') as stream:
 
-                yaml.dump(config, stream, default_flow_style=False)
+                yaml.safe_dump(config, stream, default_flow_style=False)
             
             print(colorama.Fore.GREEN + '\"{}\" set as the current context.'.format(cluster))
         
