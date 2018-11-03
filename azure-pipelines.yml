@@ -57,6 +57,6 @@ jobs:
 
   - task: PyPIPublisher@0
     inputs:
-      pypiConnection: PyPi-Uploads
+      pypiConnection: pypi
       packageDirectory: .
   condition: succeeded('Test')
