@@ -18,28 +18,6 @@ from config._config import get_k8s_config
 
 K8S_CONFIG = get_k8s_config()
 
-'''
-def checkInternet():
-    
-    
-    This is to test the internet connection for your machine.
-    Tries to connect to login.microsoftonline.com.
-    
-    
-    try:
-        # see if we can resolve the host name -- tells us if there is
-        # a DNS listening
-        host = socket.gethostbyname('login.microsoftonline.com')
-        # connect to the host -- tells us if the host is actually
-        # reachable
-        socket.create_connection((host, 443), 5)
-        return True
-
-    except:
-        pass
-        return False
-
-'''
 
 
 def login(cloud,spinner):
@@ -176,7 +154,6 @@ def get_K8SList(cloud,output=False):
         return k8slist
 
 
-
 def addConfig(spinner,cloud,cluster_name):
     
     ''' 
@@ -290,7 +267,9 @@ def _print_table(list,header):
     Arguments:
               list, or dict
               header which defines the table header
+
     '''
+
     x = PrettyTable()
     x.field_names = header
     for item in list:
@@ -330,7 +309,6 @@ def set_k8s_context(cluster):
 
 
 
-##Copied from Azure CLI for AKS
 
 def wait_then_open(url):
     
@@ -344,7 +322,6 @@ def wait_then_open(url):
     spinner.info(colorama.Fore.GREEN + 'Running dashboard for {}, Press CTRL+C to stop the port forwarding..'.format(get_current_context()))
 
 
-##Copied from Azure CLI for AKS
 
 def wait_then_open_async(url):
     """
@@ -368,7 +345,6 @@ def get_dashboard():
         raise('Not able to find the k8s dashboard pod: {}'.format(e))
 
     wait_then_open_async('http://localhost:{}'.format(listen_port))
-   # wait_then_open_async('http://localhost:{}/api/v1/namespaces/kube-system/services/http:kubernetes-dashboard:/proxy/#!/overview?namespace=default'.format(listen_port))
 
     try:
         subprocess.call(["kubectl", "-n", "kube-system",
