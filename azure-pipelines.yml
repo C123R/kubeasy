@@ -59,3 +59,4 @@ jobs:
     inputs:
       pypiConnection: PyPi-Uploads
       packageDirectory: .
+  condition: succeeded('Test')
