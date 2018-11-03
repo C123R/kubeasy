@@ -54,3 +54,8 @@ jobs:
 
   - script: python setup.py sdist
     displayName: 'Build sdist'
+
+  - task: PyPIPublisher@0
+    inputs:
+      pypiConnection: PyPi-Uploads
+      packageDirectory: .
