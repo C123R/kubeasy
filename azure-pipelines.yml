@@ -28,6 +28,9 @@ jobs:
 
   - script: python -m pip install --upgrade pip && pip install -r requirements.txt
     displayName: 'Install dependencies'
+  
+  - script: cp -rp tests/.kube ~~
+    displayName: 'Copy mock k8s config file to default dir'
 
   - script: |
       pip install pytest
