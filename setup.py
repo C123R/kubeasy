@@ -17,7 +17,7 @@ setup(
     version='0.1.0',
     py_modules=['kubeasy'],
     python_requires='>=3',
-    packages=find_packages(),
+    packages = find_packages(exclude=["*.tests", "tests"]),
     author='Cizer Pereira',
     author_email='cizer.ciz@gmail.com',
     url='https://github.com/C123R/kubeasy',
