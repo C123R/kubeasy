@@ -57,6 +57,6 @@ jobs:
 
   - task: PyPIPublisher@0
     inputs:
-      pypiConnection: pypi
+      externalFeedCredentials: pypi
       packageDirectory: .
   condition: succeeded('Test')
